@@ -1,0 +1,81 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
+<script src="http://documentcloud.github.com/backbone/backbone-min.js"></script>
+<script>
+  var TodoItem = Backbone.Model.extend({
+    defaults: {
+        title: '',
+        completed: false
+    },
+
+    toggle: function() {
+        this.set({ completed: !this.get('completed') });
+    }
+  });
+
+  var TodoList = Backbone.Collection.extend({
+    model: TodoItem,
+
+    filterCompleted: function() {
+      return new TodoList(this.where({ completed: true }));
+    }
+  });
+
+  var TodoItemView = Backbone.View.extend({
+      tagName: 'li',
+
+      events: {
+          'click' : 'toggleComplete'
+      },
+
+      initialize: function() {
+          if (this.model) {
+              this.model.on('change', this.render, this);
+              this.render();
+          }
+      },
+
+      render: function() {
+          this.$el.html(
+            '<input type="checkbox"><label>' + this.model.get('title') + '</label>'
+          );
+          this.$('input').prop('checked', this.model.get('completed'));
+
+          $('#todo_app').append(this.el);
+      },
+
+      toggleComplete: function() {
+          this.model.toggle();
+      }
+  });
+</script>
+<script>
+  var todoItem1 = new TodoItem({ title: 'doe1' });
+  var todoItem2 = new TodoItem({ title: 'doe2', completed: true});
+
+  var todoList = new TodoList([ todoItem1, todoItem2 ]);
+
+  $(document).ready(function() {
+      var todoItemView1 = new TodoItemView({ model: todoItem1 });
+      var todoItemView2 = new TodoItemView({ model: todoItem2 });
+
+      $('#new_todo_create').on('click', function() {
+          var newTodo = new TodoItemView({ model: new TodoItem({ title: $('#new_todo_title').val() }) });
+      });
+  });
+</script>
+<div id="todo_app">
+  <ul></ul>
+  <input type="text" id="new_todo_title"><label for="new_todo_title">Title</label>
+  <button id="new_todo_create">create</button>
+</div>
+</body>
+</html>
