@@ -10,50 +10,99 @@
 <script src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
 <script src="http://documentcloud.github.com/backbone/backbone-min.js"></script>
 <script>
+  // Model for a single todo item
   var TodoItem = Backbone.Model.extend({
     defaults: {
         title: '',
         completed: false
     },
 
+    // Toggle completed state on or off
     toggle: function() {
         this.set({ completed: !this.get('completed') });
     }
   });
 
+  // Collection for a group of todo items
   var TodoList = Backbone.Collection.extend({
     model: TodoItem,
 
-    filterCompleted: function() {
-      return new TodoList(this.where({ completed: true }));
+    // Return amount of all todo items
+    countAll: function() {
+        return this.length;
+    },
+
+    // Return amount of all completed todo items
+    countComplete: function() {
+        return this.where({ completed: true }).length
     }
   });
 
+  // View for a single todo item
   var TodoItemView = Backbone.View.extend({
       tagName: 'li',
 
+      // Toggle complete status when the view is clicked
+      // TODO: differentiate between click on checkbox and text
       events: {
           'click' : 'toggleComplete'
       },
 
+      // Render view when instantiated with a model
       initialize: function() {
           if (this.model) {
-              this.model.on('change', this.render, this);
               this.render();
           }
       },
 
+      // This function renders the view for the todo item
       render: function() {
           this.$el.html(
             '<input type="checkbox"><label>' + this.model.get('title') + '</label>'
           );
           this.$('input').prop('checked', this.model.get('completed'));
 
-          $('#todo_app').append(this.el);
+          return this;
       },
 
+      // Call TodoItem.toggle()
       toggleComplete: function() {
           this.model.toggle();
+      }
+  });
+
+  // View for a collection of todo items
+  var TodoListView = Backbone.View.extend({
+      el: '#todo_app',
+
+      initialize: function() {
+        // Listen to events on the collection passed to the view
+        this.listenTo(this.collection, 'add', this.render);
+        this.listenTo(this.collection, 'change', this.render);
+
+        // Render view if instantiated with a collection
+        if (this.collection) {
+            this.render();
+        }
+      },
+
+      // Render the view, instantiating a new TodoItemView for each model
+      // in the collection
+      render: function() {
+          // Set var self to this, for use inside this.collection.each loop
+          self = this;
+          this.$('#todo_list').html('');
+
+          this.collection.each(function(todo) {
+            self.$('#todo_list').append(new TodoItemView({ model: todo }).el);
+          });
+
+          // Render the counters
+          this.$('#todo_count').html(
+            this.collection.countComplete() + '/' + this.collection.countAll()
+          );
+
+          return this;
       }
   });
 </script>
@@ -64,16 +113,15 @@
   var todoList = new TodoList([ todoItem1, todoItem2 ]);
 
   $(document).ready(function() {
-      var todoItemView1 = new TodoItemView({ model: todoItem1 });
-      var todoItemView2 = new TodoItemView({ model: todoItem2 });
-
       $('#new_todo_create').on('click', function() {
-          var newTodo = new TodoItemView({ model: new TodoItem({ title: $('#new_todo_title').val() }) });
+          todoList.create(new TodoItem({ title: $('#new_todo_title').val() }));
       });
+        var todoListView = new TodoListView({ collection: todoList });
   });
 </script>
 <div id="todo_app">
-  <ul></ul>
+  <ul id="todo_list"></ul>
+  <p id="todo_count"></p>
   <input type="text" id="new_todo_title"><label for="new_todo_title">Title</label>
   <button id="new_todo_create">create</button>
 </div>
