@@ -33,8 +33,13 @@
     },
 
     // Return amount of all completed todo items
-    countComplete: function() {
+    countCompleted: function() {
         return this.where({ completed: true }).length
+    },
+
+    // Remove all the completed todo items from the collection
+    clearCompleted: function() {
+        this.remove(this.where({ completed: true }));
     }
   });
 
@@ -78,6 +83,7 @@
       initialize: function() {
         // Listen to events on the collection passed to the view
         this.listenTo(this.collection, 'add', this.render);
+        this.listenTo(this.collection, 'remove', this.render);
         this.listenTo(this.collection, 'change', this.render);
 
         // Render view if instantiated with a collection
@@ -89,17 +95,19 @@
       // Render the view, instantiating a new TodoItemView for each model
       // in the collection
       render: function() {
+          this.$main = this.$('#todo_list');
+          this.$footer = this.$('#todo_count');
           // Set var self to this, for use inside this.collection.each loop
           self = this;
-          this.$('#todo_list').html('');
+          this.$main.html('');
 
           this.collection.each(function(todo) {
-            self.$('#todo_list').append(new TodoItemView({ model: todo }).el);
+            self.$main.append(new TodoItemView({ model: todo }).el);
           });
 
           // Render the counters
-          this.$('#todo_count').html(
-            this.collection.countComplete() + '/' + this.collection.countAll()
+          this.$footer.html(
+            this.collection.countCompleted() + '/' + this.collection.countAll()
           );
 
           return this;
@@ -113,10 +121,15 @@
   var todoList = new TodoList([ todoItem1, todoItem2 ]);
 
   $(document).ready(function() {
-      $('#new_todo_create').on('click', function() {
-          todoList.create(new TodoItem({ title: $('#new_todo_title').val() }));
-      });
-        var todoListView = new TodoListView({ collection: todoList });
+    $('#new_todo_create').on('click', function() {
+      todoList.create(new TodoItem({ title: $('#new_todo_title').val() }));
+    });
+
+    $('#todo_clear_completed').on('click', function() {
+        todoList.clearCompleted();
+    });
+
+    var todoListView = new TodoListView({ collection: todoList });
   });
 </script>
 <div id="todo_app">
@@ -124,6 +137,7 @@
   <p id="todo_count"></p>
   <input type="text" id="new_todo_title"><label for="new_todo_title">Title</label>
   <button id="new_todo_create">create</button>
+  <p><a href="#" id="todo_clear_completed">clear completed</a></p>
 </div>
 </body>
 </html>
