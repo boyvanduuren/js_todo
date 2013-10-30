@@ -9,127 +9,27 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="http://documentcloud.github.com/underscore/underscore-min.js"></script>
 <script src="http://documentcloud.github.com/backbone/backbone-min.js"></script>
+
+<script src="js/models.js"></script>
+<script src="js/collections.js"></script>
+<script src="js/views.js"></script>
 <script>
-  // Model for a single todo item
-  var TodoItem = Backbone.Model.extend({
-    defaults: {
-        title: '',
-        completed: false
-    },
 
-    // Toggle completed state on or off
-    toggle: function() {
-        this.set({ completed: !this.get('completed') });
-    }
-  });
 
-  // Collection for a group of todo items
-  var TodoList = Backbone.Collection.extend({
-    model: TodoItem,
-
-    // Return amount of all todo items
-    countAll: function() {
-        return this.length;
-    },
-
-    // Return amount of all completed todo items
-    countCompleted: function() {
-        return this.where({ completed: true }).length
-    },
-
-    // Remove all the completed todo items from the collection
-    clearCompleted: function() {
-        this.remove(this.where({ completed: true }));
-    }
-  });
-
-  // View for a single todo item
-  var TodoItemView = Backbone.View.extend({
-      tagName: 'li',
-
-      // Toggle complete status when the view is clicked
-      // TODO: differentiate between click on checkbox and text
-      events: {
-          'click' : 'toggleComplete'
-      },
-
-      // Render view when instantiated with a model
-      initialize: function() {
-          if (this.model) {
-              this.render();
-          }
-      },
-
-      // This function renders the view for the todo item
-      render: function() {
-          this.$el.html(
-            '<input type="checkbox"><label>' + this.model.get('title') + '</label>'
-          );
-          this.$('input').prop('checked', this.model.get('completed'));
-
-          return this;
-      },
-
-      // Call TodoItem.toggle()
-      toggleComplete: function() {
-          this.model.toggle();
-      }
-  });
-
-  // View for a collection of todo items
-  var TodoListView = Backbone.View.extend({
-      el: '#todo_app',
-
-      initialize: function() {
-        // Listen to events on the collection passed to the view
-        this.listenTo(this.collection, 'add', this.render);
-        this.listenTo(this.collection, 'remove', this.render);
-        this.listenTo(this.collection, 'change', this.render);
-
-        // Render view if instantiated with a collection
-        if (this.collection) {
-            this.render();
-        }
-      },
-
-      // Render the view, instantiating a new TodoItemView for each model
-      // in the collection
-      render: function() {
-          this.$main = this.$('#todo_list');
-          this.$footer = this.$('#todo_count');
-          // Set var self to this, for use inside this.collection.each loop
-          self = this;
-          this.$main.html('');
-
-          this.collection.each(function(todo) {
-            self.$main.append(new TodoItemView({ model: todo }).el);
-          });
-
-          // Render the counters
-          this.$footer.html(
-            this.collection.countCompleted() + '/' + this.collection.countAll()
-          );
-
-          return this;
-      }
-  });
 </script>
 <script>
-  var todoItem1 = new TodoItem({ title: 'doe1' });
-  var todoItem2 = new TodoItem({ title: 'doe2', completed: true});
-
-  var todoList = new TodoList([ todoItem1, todoItem2 ]);
+  app.Todos.add([ { title: 'init1' }, { title: 'init2' } ]);
 
   $(document).ready(function() {
     $('#new_todo_create').on('click', function() {
-      todoList.create(new TodoItem({ title: $('#new_todo_title').val() }));
+      app.Todos.create({ title: $('#new_todo_title').val() });
     });
 
     $('#todo_clear_completed').on('click', function() {
-        todoList.clearCompleted();
+        app.Todos.clearCompleted();
     });
 
-    var todoListView = new TodoListView({ collection: todoList });
+    new app.TodoListView();
   });
 </script>
 <div id="todo_app">
